@@ -35,11 +35,11 @@ function findColorValue(rule) {
 
 
 
-const scss = fs.readFileSync('./src/assets/style.scss');
+const css = fs.readFileSync('./src/assets/style.scss');
 
 postcss([abcCssPlugin({
 
-})]).process(scss).then(result => {
+})]).process(css, { from: undefined }).then(result => {
     // console.log(result);
 });
 
