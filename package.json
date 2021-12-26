@@ -34,9 +34,4 @@
       "node index.js"
     ]
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "echo \"hello pre-commit \""
-    }
-  }
 }
