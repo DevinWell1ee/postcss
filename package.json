@@ -32,5 +32,10 @@
     "src/**/*.{scss}": [
       "node index.js"
     ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
   }
 }
