@@ -13,6 +13,11 @@ const path = require('path');
 const fileKeys = process.argv.slice(2)
 console.log(yellow(fileKeys))
 
+const { parse } = require('@vue/compiler-sfc');
+console.log(parse(
+    fs.readFileSync('./src/App.vue', 'utf-8')
+))
+
 const files = fileKeys.map(key => fs.readFileSync(path.resolve(key)))
 
 let error = []
