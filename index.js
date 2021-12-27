@@ -69,6 +69,9 @@ function validationAbcCssRule(rule, fileName) {
     })
 }
 
+yellow(scssFiles)
+yellow(vueFiles)
+
 Object.keys(scssFiles).length > 0 && Object.keys(scssFiles).forEach(key => {
     postcss([abcCssPlugin({
         fileName: key
