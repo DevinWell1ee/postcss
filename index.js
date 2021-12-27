@@ -31,7 +31,7 @@ const abcCssPlugin = (opts => {
     }
 });
 
-const css = fs.readFileSync('./src/views/About.vue')
+const css = fs.readFileSync('./src/App.vue')
 
 const color = ['#2c3e50', '#42b983']
 
