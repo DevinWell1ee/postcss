@@ -2,28 +2,40 @@
 
 const postcss = require('postcss');
 const fs = require('fs');
-// const path = require('path')
+
+const chalk = require("chalk");
+
+const red = chalk.red;
+const green = chalk.bold.green;
+const yellow = chalk.yellow;
+const path = require('path');
+
+const fileKeys = process.argv.slice(2)
+console.log(yellow(fileKeys))
+
+const files = fileKeys.map(key => fs.readFileSync(path.resolve(key)))
 
 let error = []
 
 const abcCssPlugin = (opts => {
     opts = opts || {};
-    // const { colorMap } = opts;
 
-    console.log('@@@')
-    // console.log(opts)
+    yellow(opts);
+
     return {
         postcssPlugin: 'postcss-abc',
         Rule (rule) {
-            // console.log(rule.nodes)
-            findColorValue(rule)
+            console.log(rule)
+            validationAbcCssRule(rule)
         }
     }
 });
 
+const css = fs.readFileSync('./src/views/About.vue')
+
 const color = ['#2c3e50', '#42b983']
 
-function findColorValue(rule) {
+function validationAbcCssRule(rule) {
     rule.nodes.forEach(o => {
         if (o.type === 'decl') {
             color.forEach(c => {
@@ -35,22 +47,18 @@ function findColorValue(rule) {
     })
 }
 
-const css = fs.readFileSync('./src/assets/style.scss');
 
-postcss([abcCssPlugin({
-
-})]).process(css, { from: undefined }).then(result => {
-    // console.log(result);
+postcss([abcCssPlugin({})]).process(css, { from: undefined }).then(result => {
     if (error.length > 0) {
-        error.forEach(err => {
-            console.error(err)
+        error.forEach((err, index) => {
+            console.log(red(`${index}、${err}`))
         })
 
         error = []
 
         process.exit(1)
     } else {
+        console.log(green('validate success !!!'))
         process.exit(0)
     }
-
 });
