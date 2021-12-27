@@ -3,4 +3,5 @@
 
 echo "hello husky"
 
-npx node index.js
+npx lint-staged
+
