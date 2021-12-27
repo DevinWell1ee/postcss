@@ -9,62 +9,81 @@ const red = chalk.red;
 const green = chalk.bold.green;
 const yellow = chalk.yellow;
 const path = require('path');
-
-const fileKeys = process.argv.slice(2)
-console.log(yellow(fileKeys))
-
+const _ = require('lodash');
 const { parse } = require('@vue/compiler-sfc');
-console.log(parse(
-    fs.readFileSync('./src/App.vue', 'utf-8')
-))
 
-const files = fileKeys.map(key => fs.readFileSync(path.resolve(key)))
+
+const color = ['#2c3e50', '#42b983']
+// 分组css 文件 和 vue 文件
+const fileKeys = process.argv.slice(2)
+const groupFileKeys = _.groupBy(fileKeys, (key) => {
+    return _.split(key, '.')[1]
+})
+
+console.log(groupFileKeys)
+
+const scssFiles = _.reduce(groupFileKeys.scss, (res, cur) => {
+    // 处理scss文件
+    res[cur] = fs.readFileSync(cur)
+    return res
+}, {})
+
+const vueFiles = _.reduce(groupFileKeys.vue, (res, cur) => {
+    // 处理vue 文件的style； 转buffer
+    const styles = parse(
+        fs.readFileSync(path.resolve(cur), 'utf-8')
+    ).descriptor.styles
+
+    const buffers = styles.map(o => {
+        return Buffer.from(o.content, 'utf-8')
+    })
+
+    res[cur] = buffers
+
+    return res
+}, {})
+
 
 let error = []
 
 const abcCssPlugin = (opts => {
-    opts = opts || {};
-
-    yellow(opts);
+    const { fileName } = opts
 
     return {
         postcssPlugin: 'postcss-abc',
         Rule (rule) {
-            console.log(rule)
-            validationAbcCssRule(rule)
+            validationAbcCssRule(rule, fileName)
         }
     }
 });
 
-const css = fs.readFileSync('./src/assets/style.scss')
-console.log(css)
-
-const color = ['#2c3e50', '#42b983']
-
-function validationAbcCssRule(rule) {
+function validationAbcCssRule(rule, fileName) {
     rule.nodes.forEach(o => {
         if (o.type === 'decl') {
             color.forEach(c => {
                 if (o.value && o.value.includes(c)) {
-                    error.push(`${o.parent.selector} - ${o.prop}: warn, the value ${o.value} in theme`)
+                    error.push(`${fileName} - ${o.parent.selector} - ${o.prop}:  the value ${o.value} in theme`)
                 }
             })
         }
     })
 }
 
+Object.keys(scssFiles).length > 0 && Object.keys(scssFiles).forEach(key => {
+    postcss([abcCssPlugin({
+        fileName: key
+    })]).process(scssFiles[key], { from: undefined });
+})
 
-postcss([abcCssPlugin({})]).process(css, { from: undefined }).then(result => {
-    if (error.length > 0) {
-        error.forEach((err, index) => {
-            console.log(red(`${index}、${err}`))
-        })
+Object.keys(vueFiles).length > 0 && Object.keys(vueFiles).forEach(key => {
+    vueFiles[key].forEach(b => {
+        postcss([abcCssPlugin({
+            fileName: key
+        })]).process(b, { from: undefined });
+    })
+})
 
-        error = []
+console.log('error:', error)
 
-        process.exit(1)
-    } else {
-        console.log(green('validate success !!!'))
-        process.exit(0)
-    }
-});
+
+
