@@ -1,5 +1,11 @@
 #!/usr/bin/env node
 
+// Root：根节点，代表一个css文件
+// AtRule：以@开头的申明，比如@charset "UTF-8"或@media (screen) {}
+// Rule：内部包含定义的选择器，比如input, button {}
+// Declaration：key-value键值对，比如color: black;
+// Comment：单独的注释。selectors、at-rule的参数以及value的注释在节点的node属性内
+
 const postcss = require('postcss');
 const fs = require('fs');
 
@@ -7,20 +13,25 @@ const chalk = require("chalk");
 
 const red = chalk.red;
 const green = chalk.bold.green;
-const yellow = chalk.yellow;
+const yellow = chalk.yellow
+const h1 = chalk.red.bold;
 const path = require('path');
 const _ = require('lodash');
 const { parse } = require('@vue/compiler-sfc');
 
 
-const color = ['#2c3e50', '#42b983']
+const map = new Map([
+    ['#2c3e50', '$T1'],
+    ['#42b983', '$T2']
+])
+
+let error = []
+
 // 分组css 文件 和 vue 文件
 const fileKeys = process.argv.slice(2)
 const groupFileKeys = _.groupBy(fileKeys, (key) => {
     return _.split(key, '.')[1]
 })
-
-console.log(groupFileKeys)
 
 const scssFiles = _.reduce(groupFileKeys.scss, (res, cur) => {
     // 处理scss文件
@@ -43,50 +54,95 @@ const vueFiles = _.reduce(groupFileKeys.vue, (res, cur) => {
     return res
 }, {})
 
-
-let error = []
-
-const abcCssPlugin = (opts => {
-    const { fileName } = opts
-
-    return {
-        postcssPlugin: 'postcss-abc',
-        Rule (rule) {
-            validationAbcCssRule(rule, fileName)
-        }
-    }
-});
-
-function validationAbcCssRule(rule, fileName) {
-    rule.nodes.forEach(o => {
-        if (o.type === 'decl') {
-            color.forEach(c => {
-                if (o.value && o.value.includes(c)) {
-                    error.push(`${fileName} - ${o.parent.selector} - ${o.prop}:  the value ${o.value} in theme`)
-                }
-            })
-        }
+function gainScssPromises() {
+    return Object.keys(scssFiles).map(key => {
+        return postcss([abcCssPlugin({
+            fileName: key
+        })]).process(scssFiles[key], { from: undefined });
     })
 }
 
-yellow(scssFiles)
-yellow(vueFiles)
+function gainVuePromises() {
+    const arr = [];
 
-Object.keys(scssFiles).length > 0 && Object.keys(scssFiles).forEach(key => {
-    postcss([abcCssPlugin({
-        fileName: key
-    })]).process(scssFiles[key], { from: undefined });
-})
-
-Object.keys(vueFiles).length > 0 && Object.keys(vueFiles).forEach(key => {
-    vueFiles[key].forEach(b => {
-        postcss([abcCssPlugin({
-            fileName: key
-        })]).process(b, { from: undefined });
+    Object.keys(vueFiles).map(key => {
+        vueFiles[key].forEach(b => {
+            arr.push(postcss([abcCssPlugin({
+                fileName: key
+            })]).process(b, { from: undefined }));
+        })
     })
+
+    return arr;
+}
+
+// v8
+// const abcCssPlugin = (opts => {
+//         const {fileName} = opts
+//
+//         return {
+//             postcssPlugin: 'postcss-abc',
+//             Declaration(decl) {
+//                 color.forEach(c => {
+//                     if (decl.value && decl.value.includes(c)) {
+//                         error.push(`${fileName} - ${decl.parent.selector} - ${decl.prop}:  the value ${decl.value} in theme`)
+//                     }
+//                 })
+//             }
+//         }
+//     }
+// )
+
+
+// const map = new Map()
+// v7
+const abcCssPlugin = (opts => {
+    const {fileName} = opts
+
+    return (root) => {
+
+
+
+        root.walkDecls(decl => {
+            for (let key of map.keys()) {
+                if (decl.value && decl.value.includes(key)) {
+                    error.push(`${h1(fileName)} \n ${red(decl.parent.selector)} - ${red(decl.prop)}:  the value ${decl.value} in theme - ${map.get(key)} `)
+                }
+            }
+        })
+    }
 })
 
-console.log('error:', error)
+const promises = [
+    ...gainScssPromises(),
+    ...gainVuePromises(),
+]
+
+
+Promise.all(promises)
+    .then(() => {
+        if (error.length > 0) {
+            error.forEach(err => {
+                console.log(err)
+            })
+
+            error = []
+
+            console.log(yellow('请修改！！'))
+            process.exit(1)
+        } else {
+            console.log(green('success!'))
+
+            error = []
+
+            process.exit(1)
+        }
+    })
+
+
+module.exports = {
+    abcCssPlugin
+}
 
 
 

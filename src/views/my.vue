@@ -8,11 +8,6 @@
 </script>
 
 <style lang="scss">
-.ss {
-  color: red;
+@import "src/assets/style.scss";
 
-  .qq {
-    height: 20px;
-  }
-}
 </style>

@@ -8,6 +8,7 @@
 </template>
 
 <script>
+
 // @ is an alias to /src
 // import HelloWorld from '@/components/HelloWorld.vue'
 export default {
@@ -17,3 +18,13 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.ss {
+  color: red;
+
+  .qq {
+    height: 10px;
+  }
+}
+</style>

@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    DDDdffffff
+    DDDdffffffdd
     <div id="nav">
       <router-link to="/">Home</router-link> |
       <router-link to="/about">About</router-link>
@@ -9,7 +9,14 @@
   </div>
 </template>
 
+<script>
+export default {
+
+}
+</script>
+
 <style lang="scss">
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -32,8 +39,16 @@
 }
 </style>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .dd {
   color: #2c3e50;
+  height: 20px;
+
+  .aa {
+
+    .dd {
+      color: red;
+    }
+  }
 }
 </style>
