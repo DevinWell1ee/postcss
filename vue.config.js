@@ -1,4 +1,3 @@
-const AbcWebpackCssPlugin = require('./cssplugin')
 
 module.exports = {
     publicPath: '/',
@@ -12,14 +11,5 @@ module.exports = {
         config.plugins.delete('prefetch');
 
         config.plugins.delete('preload');
-
-        config
-            .plugin('webpack-oss')
-            .use(AbcWebpackCssPlugin, [
-                {
-
-                },
-            ])
-            .end();
     },
 };

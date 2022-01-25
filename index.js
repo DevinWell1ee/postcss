@@ -6,7 +6,6 @@
 // Declaration：key-value键值对，比如color: black;
 // Comment：单独的注释。selectors、at-rule的参数以及value的注释在节点的node属性内
 
-const postcss = require('postcss');
 const fs = require('fs');
 
 const chalk = require("chalk");
@@ -18,6 +17,7 @@ const h1 = chalk.red.bold;
 const path = require('path');
 const _ = require('lodash');
 const { parse } = require('@vue/compiler-sfc');
+const scssParse = require('postcss-scss/lib/scss-parse')
 
 
 const map = new Map([
@@ -29,13 +29,15 @@ let error = []
 
 // 分组css 文件 和 vue 文件
 const fileKeys = process.argv.slice(2)
+console.log(process.argv)
 const groupFileKeys = _.groupBy(fileKeys, (key) => {
     return _.split(key, '.')[1]
 })
 
+
 const scssFiles = _.reduce(groupFileKeys.scss, (res, cur) => {
     // 处理scss文件
-    res[cur] = fs.readFileSync(cur)
+    res[cur] = scssParse(fs.readFileSync(cur, "utf-8"))
     return res
 }, {})
 
@@ -46,7 +48,8 @@ const vueFiles = _.reduce(groupFileKeys.vue, (res, cur) => {
     ).descriptor.styles
 
     const buffers = styles.map(o => {
-        return Buffer.from(o.content, 'utf-8')
+        return scssParse(o.content)
+        // return Buffer.from(o.content, 'utf-8')
     })
 
     res[cur] = buffers
@@ -54,11 +57,23 @@ const vueFiles = _.reduce(groupFileKeys.vue, (res, cur) => {
     return res
 }, {})
 
+console.log(scssFiles)
+console.log(vueFiles)
+
 function gainScssPromises() {
     return Object.keys(scssFiles).map(key => {
-        return postcss([abcCssPlugin({
-            fileName: key
-        })]).process(scssFiles[key], { from: undefined });
+        // return postcss([abcCssPlugin({
+        //     fileName: key
+        // })]).process(scssFiles[key], { from: undefined });
+        scssFiles[key].walkDecls((decl) => {
+            for (let k of map.keys()) {
+                if (decl.value && decl.value.includes(k)) {
+                    error.push(`${h1(key)} \n ${red(decl.parent.selector)} - ${red(decl.prop)}:  the value ${decl.value} in theme - ${map.get(k)} `)
+                }
+            }
+        })
+
+        return Promise.resolve(scssFiles[key])
     })
 }
 
@@ -67,9 +82,18 @@ function gainVuePromises() {
 
     Object.keys(vueFiles).map(key => {
         vueFiles[key].forEach(b => {
-            arr.push(postcss([abcCssPlugin({
-                fileName: key
-            })]).process(b, { from: undefined }));
+            // arr.push(postcss([abcCssPlugin({
+            //     fileName: key
+            // })]).process(b, { from: undefined }));
+            b.walkDecls((decl) => {
+                for (let k of map.keys()) {
+                    if (decl.value && decl.value.includes(k)) {
+                        error.push(`${h1(key)} \n ${red(decl.parent.selector)} - ${red(decl.prop)}:  the value ${decl.value} in theme - ${map.get(k)} `)
+                    }
+                }
+            })
+
+            return Promise.resolve(b)
         })
     })
 
@@ -96,22 +120,22 @@ function gainVuePromises() {
 
 // const map = new Map()
 // v7
-const abcCssPlugin = (opts => {
-    const {fileName} = opts
-
-    return (root) => {
-
-
-
-        root.walkDecls(decl => {
-            for (let key of map.keys()) {
-                if (decl.value && decl.value.includes(key)) {
-                    error.push(`${h1(fileName)} \n ${red(decl.parent.selector)} - ${red(decl.prop)}:  the value ${decl.value} in theme - ${map.get(key)} `)
-                }
-            }
-        })
-    }
-})
+// const abcCssPlugin = (opts => {
+//     const {fileName} = opts
+//
+//     return (root) => {
+//
+//
+//
+//         root.walkDecls(decl => {
+//             for (let key of map.keys()) {
+//                 if (decl.value && decl.value.includes(key)) {
+//                     error.push(`${h1(fileName)} \n ${red(decl.parent.selector)} - ${red(decl.prop)}:  the value ${decl.value} in theme - ${map.get(key)} `)
+//                 }
+//             }
+//         })
+//     }
+// })
 
 const promises = [
     ...gainScssPromises(),
@@ -129,7 +153,7 @@ Promise.all(promises)
             error = []
 
             console.log(yellow('请修改！！'))
-            process.exit(1)
+            process.exit(0)
         } else {
             console.log(green('success!'))
 
@@ -139,10 +163,6 @@ Promise.all(promises)
         }
     })
 
-
-module.exports = {
-    abcCssPlugin
-}
 
 
 

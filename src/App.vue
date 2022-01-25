@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    DDDdffffffdd
+    DDDdffffffddddddddss
     <div id="nav">
       <router-link to="/">Home</router-link> |
       <router-link to="/about">About</router-link>
@@ -41,8 +41,8 @@ export default {
 
 <style lang="scss">
 .dd {
-  color: #2c3e50;
-  height: 20px;
+  color: red;
+  height: 30px;
 
   .aa {
 

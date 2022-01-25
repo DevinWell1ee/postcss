@@ -1,16 +1,17 @@
-const postcss = require('postcss');
 const fs = require('fs');
 
 const chalk = require('chalk');
 
 const { green } = chalk.bold;
-const { yellow } = chalk;
 const h1 = chalk.red.bold;
 const path = require('path');
 const _ = require('lodash');
 const { parse } = require('@vue/compiler-sfc');
 const dir = require('@tool/node-dir');
 const scssParse = require('postcss-scss/lib/scss-parse')
+const yellow = chalk.bgCyan
+
+let error = 0
 
 const files = dir
     .files(path.join(__dirname, './src'), {
@@ -64,17 +65,26 @@ const map = new Map();
 
 function joinSelector(root, prefix = '', fileName) {
     if (root.type === 'rule') {
-
         let s = '';
         if (prefix) s = `${prefix} ${root.selector}`;
         else s = root.selector;
 
-        // console.log(yellow(`文件【${fileName}】：遍历到选择器 -【${s}】`));
+        const css = root.nodes ? root.nodes.filter(o => o.type === 'decl').reduce((res, cur) => {
+            res[cur.prop] = cur.value
 
+            return res
+        }, {}) : {}
+
+        // && !_.isEqual(map.get(s).css, css)
         if (map.has(s)) {
-            console.log(h1(`文件【${fileName}】选择器 -【${s}】可能与文件【${map.get(s)}】造成冲突 `));
+            console.log(yellow('>>>>>>>>>> 冲突'))
+            console.log(h1(`文件【${fileName}】\n"${s}": ${JSON.stringify(css, null, 4)} \n文件【${map.get(s).fileName}】 \n"${s}": ${JSON.stringify(map.get(s).css, null, 4)} `));
+            error++;
         } else {
-            map.set(s, fileName);
+            map.set(s, {
+                fileName,
+                css
+            });
         }
 
         prefix = `${prefix} ${root.selector}`;
@@ -126,5 +136,5 @@ const promises = [
 
 Promise.all(promises)
     .then(() => {
-        console.log(green('done !!!!!'));
+        console.log(green(`done !!!!!, 存在 ${error} 条可能冲突。`));
     });
