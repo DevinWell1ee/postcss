@@ -57,8 +57,6 @@ const vueFiles = _.reduce(groupFileKeys.vue, (res, cur) => {
     return res
 }, {})
 
-console.log(scssFiles)
-console.log(vueFiles)
 
 function gainScssPromises() {
     return Object.keys(scssFiles).map(key => {
@@ -159,7 +157,7 @@ Promise.all(promises)
 
             error = []
 
-            process.exit(1)
+            process.exit(0)
         }
     })
 
