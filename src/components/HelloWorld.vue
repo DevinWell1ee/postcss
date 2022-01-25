@@ -44,6 +44,6 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style>
 h5 {
-  margin: 10px 0 ;
+  margin: 10px 03 ;
 }
 </style>
